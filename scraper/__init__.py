@@ -11,7 +11,7 @@ scraper.config.from_object('config')
 db = SQLAlchemy(scraper)
 
 from scraper.sas import scrape as sas_scraper
-from scraper.models import models
+from scraper.base_models import models
 
 
 # Build the database:
