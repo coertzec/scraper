@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from pprint import pprint 
+from scraper.sas import sas_models
 import urllib
 import json 
 import time
@@ -9,13 +10,12 @@ MTB_EVENT_TYPE = "3148f509-b19f-11e5-907e-08002773d9e3"
 YEARS = [2017, 2016]
 
 
-def scrape():
-	 mtb_events = get_mtb_events()
-	 for event in mtb_events: 
-	  	categories = get_categories(mtb_events[event][0])
-	  	time.sleep(2)
-
-
+def scrape_sas():
+	mtb_events = get_mtb_events()
+	 # for event in mtb_events: 
+	 #		#Retrieve the event_reference to look up the categories
+	 #  	categories = get_categories(mtb_events[event][0])
+	 #  	time.sleep(2)
 
 def get_mtb_events(): 
 	events = {}
@@ -39,8 +39,11 @@ def get_mtb_events():
 			events[event_name] = [event_reference, event_date]
 	return events	
 
-def get_categories(event_reference):
+def get_categories_and_stages(event_reference):
+	#Categories and stages are done in the same method so that we 
+	#only make a single pass of the html soup for the page
 	categories = {}
+	stages = {}
 	url =  (DESTINATION_URL + event_reference)
 	page = urllib.request.urlopen(url)
 	soup = BeautifulSoup(page, "html.parser")
@@ -63,4 +66,6 @@ def get_categories(event_reference):
 
 
 
-scrape()
+
+
+scrape_sas()
