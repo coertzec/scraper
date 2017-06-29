@@ -30,7 +30,7 @@ class SASEventStage(Base):
 	
 	def __init__(self, event_stage_id, stage_reference): 
 		self.event_stage_id = event_stage_id
-		self.event_reference = event_reference
+		self.stage_reference = stage_reference
 
 class SASCategoryStage(Base):
 	stage_reference = db.Column(db.String(250), unique=True)

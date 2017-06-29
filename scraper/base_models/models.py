@@ -17,12 +17,12 @@ class Event(Base):
 		self.date = date 
 
 class Category(Base):
-	name	= db.Column(db.String(250))
+	name	= db.Column(db.String(250), nullable=False)
 	event_id = db.Column(db.Integer, db.ForeignKey('event.id'))
 	event = db.relationship('Event', backref=db.backref('event', lazy='dynamic'))
     
 	def __init__(self,name, event_id): 
-		self.name
+		self.name = name
 		self.event_id = event_id
 
 class CategoryStage(Base):
@@ -31,7 +31,7 @@ class CategoryStage(Base):
 	category = db.relationship('Category', backref=db.backref('category', lazy='dynamic'))
 
 	def __init__(self, name, category_id): 
-		self.name = name
+		self.name = name 
 		self.category_id = category_id
 
 class EventStage(Base):
