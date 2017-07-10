@@ -26,10 +26,25 @@ def scrape_sas():
 		#time.sleep(2)
 	for event_stage in db.session.query(SASEventStage):
 		pprint("Getting event stage results")
-		write_stage_results(event_stage.stage_reference, event_stage.event_stage_id, "event")
-	# for category_stage in db.session.query(SASCategoryStage):
-	# 	pprint("Getting category stage results")
-	# 	write_category_stage_results(category_stage.stage_reference, category_stage.category_stage_id)
+		base_event_stage = db.session.query(EventStage).filter(EventStage.id==event_stage.event_stage_id).first()
+		if (base_event_stage.results):
+			pprint("Event has results")
+		else:
+			write_stage_results(event_stage.stage_reference, event_stage.event_stage_id, "event")
+	for category_stage in db.session.query(SASCategoryStage):
+		pprint("Getting category stage results")
+		base_category_stage = db.session.query(CategoryStage).filter(CategoryStage.id==category_stage.category_stage_id).first()
+		if (base_category_stage.results):
+			pprint("Category stage has results")
+		else: 
+			write_stage_results(category_stage.stage_reference, category_stage.category_stage_id, "category")
+	for category in db.session.query(SASCategory):
+		pprint("Getting category results")
+		base_category = db.session.query(Category).filter(Category.id==category.category_id).first()
+		if (base_category.results):
+			pprint("Category has results")
+		else: 
+			write_category_results(category.stage_reference, category.id)
 	pprint("Scrape Complete")
 
 
@@ -43,7 +58,7 @@ def get_mtb_events():
 			json_content = json.loads(content)
 			soup = BeautifulSoup(json_content['HTML'], "html.parser")
 			anchors = soup.find_all('a')
-		except urllib.error.HTTPError:
+		except (urllib.error.HTTPError, urllib.error.ConnectionResetError):
 			pass
 		for anchor in anchors: 
 			event_reference = anchor["href"]
@@ -71,7 +86,7 @@ def get_categories_and_stages(event_reference, event_id):
 		url =  (DESTINATION_URL + event_reference)
 		try: 
 			page = urllib.request.urlopen(url)
-		except urllib.error.HTTPError:
+		except (urllib.error.HTTPError, urllib.error.ConnectionResetError):
 			return
 		soup = BeautifulSoup(page, "html.parser")
 		check_stages = get_categories(soup, event_id)
@@ -174,42 +189,12 @@ def get_results(event_reference):
 	pprint(url)
 	try: 
 		page = urllib.request.urlopen(url)
-	except urllib.error.HTTPError:
+	except (urllib.error.HTTPError, urllib.error.ConnectionResetError):
 		return
 	content =  page.read().decode("utf-8")
 	json_content = json.loads(content)
 	json_results = json_content['rows']
 	return json_results
-
-# def write_event_stage_results(event_stage_reference, event_stage_id): 
-# 	results = get_results(event_stage_reference)
-# 	if results:
-# 		for result in results: 
-# 			participant_id = get_participant(result)
-# 			db_result_check = db.session.query(Result).filter(
-# 				(Result.position==result['overall_pos']) &
-# 				(Result.gender_position==result['gender_pos']) & 
-# 				(Result.time==result['timeTakenSecondsString']) & 
-# 				(Result.event_stage_id==event_stage_id))
-# 			if not (db.session.query(db_result_check.exists()).scalar()):
-# 				db_result = Result(result['overall_pos'], participant_id, result['gender_pos'], result['timeTakenSecondsString'], event_stage_id, None, None)
-# 				db.session.add(db_result)
-# 				db.session.commit()
-
-# def write_category_stage_results(category_stage_reference, category_stage_id): 
-# 	results = get_results(category_stage_reference)
-# 	if results:
-# 		for result in results: 
-# 			participant_id = get_participant(result)
-# 			db_result_check = db.session.query(Result).filter(
-# 				(Result.position==result['overall_pos']) &
-# 				(Result.gender_position==result['gender_pos']) & 
-# 				(Result.time==result['timeTakenSecondsString']) & 
-# 				(Result.event_stage_id==category_stage_id))
-# 			if not (db.session.query(db_result_check.exists()).scalar()):
-# 				db_result = Result(result['overall_pos'], participant_id, result['gender_pos'], result['timeTakenSecondsString'], None, category_stage_id, None)
-# 				db.session.add(db_result)
-# 				db.session.commit()
 
 def write_stage_results(stage_reference, stage_id, stage_type):
 	results = get_results(stage_reference)
@@ -240,39 +225,19 @@ def write_stage_results(stage_reference, stage_id, stage_type):
 
 def write_category_results(category_reference, category_id):
 	results = get_results(category_reference)
-	pprint(results) 
 	for result in results: 
 		participant_id = get_participant(result)
+
 		db_result_check = db.session.query(Result).filter(
 			(Result.position==result['overall_pos']) &
 			(Result.gender_position==result['gender_pos']) & 
-			(Result.time==result['time_taken_seconds']) & 
-			(Result.event_stage_id==category_id))
-		if not (db.session.query(db_result_check.exists()).scalar()):
-			db_category_result = Result(result['overall_pos'], participant_id, result['gender_pos'], result['timeTakenSecondsString'], None, None, category_id)
-			pprint(db_category_result)
-			#TODO add db call to write result
-
-
-
-# def get_participants(results):
-# 	if results:
-# 		for result in results: 
-# 			pprint(result['first_name'])
-# 			if result['date_of_birth']:
-# 				birth_date = datetime.strptime(result['date_of_birth'], '%Y-%m-%d').date()
-# 			else:
-# 				birth_date = None
-# 			db_participant_check = db.session.query(Participant).filter(
-# 				(Participant.first_name==result['first_name']) &
-# 				(Participant.last_name==result['last_name']) & 
-# 				(Participant.sex==result['person_sex']) & 
-# 				(Participant.birth_date==birth_date))
-# 			if not (db.session.query(db_participant_check.exists()).scalar()):
-# 				db_participant = Participant(result['first_name'], result['last_name'], result['person_sex'], birth_date)
-# 				db.session.add(db_participant)
-# 				db.session.commit()
-
+			(Result.time==result['timeTakenSecondsString']) & 
+			(Result.category_id==category_id)).first()
+		if not db_result_check:
+			db_category_result = Result(result['overall_pos'], participant_id,
+			result['gender_pos'], result['timeTakenSecondsString'], None, None, category_id)
+			db.session.add(db_category_result)
+			db.session.commit
 
 def get_participant(result):
 	if result['date_of_birth']:
@@ -285,7 +250,8 @@ def get_participant(result):
 		(Participant.sex==result['person_sex']) & 
 		(Participant.birth_date==birth_date))
 	if not (db.session.query(db_participant_check.exists()).scalar()):
-		db_participant = Participant(result['first_name'], result['last_name'], result['person_sex'], birth_date)
+		db_participant = Participant(result['first_name'], result['last_name'],
+		result['person_sex'], birth_date)
 		db.session.add(db_participant)
 		db.session.commit()
 		return db_participant.id
@@ -294,13 +260,6 @@ def get_participant(result):
 
 scrape_sas()
 
-# event =  db.session.query(Event)
-
-# for category in event.categories: 
-# 	pprint(category.name)
-# 	pprint(category.category_stages)
-
-#write_category_results("70253440-bae9-11e6-995c-0cc47aaa2f70", 111)
 
 
 
