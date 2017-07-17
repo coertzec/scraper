@@ -17,6 +17,7 @@ from scraper.sas import sas_models as sas_models
 db.create_all()
 
 from scraper.sas import scrape as sas_scraper
+from scraper.rt import scrape as rt_scraper
 
 
 
