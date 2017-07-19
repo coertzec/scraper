@@ -1,1 +1,3 @@
-sas_config.py
+DESTINATION_URL = "https://www.saseeding.org"
+MTB_EVENT_TYPE = "3148f509-b19f-11e5-907e-08002773d9e3"
+YEARS = [2017]
