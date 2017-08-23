@@ -1,1 +1,2 @@
-YEARS = {2017: "1500322423795", 2016: "1500322522356"}
+YEARS = [2017]
+DESTINATION_URL = "http://results.racetec.co.za"

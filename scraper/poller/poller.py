@@ -1,6 +1,8 @@
-from scraper.sas.scrape import SAS as SAS
-from scraper.rt.scrape import RT as RT
+from scraper.rt import scrape as rt_scraper
+from scraper.sas import scrape as sas_scraper
 
 class Poller(object): 
-	sas = SAS()
-	rt = RT()
+
+	def poll(self):
+		rt_scraper.scrape_rt()
+		#sas_scraper.scrape_sas()

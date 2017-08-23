@@ -11,8 +11,9 @@ from scraper.rt import rt_models as rt_models
 # Build the database
 db.create_all()
 
-from scraper.poller import poller as poller
-
+from scraper.poller.poller import Poller
+poller = Poller()
+poller.poll()
 
 
 
