@@ -78,7 +78,7 @@ def get_categories_and_stages(event_reference, event_id):
 		url =  (DESTINATION_URL + event_reference)
 		try: 
 			page = urllib.request.urlopen(url)
-		except (urllib.error.HTTPError, urllib.error.ConnectionResetError):
+		except (urllib.error.HTTPError, urllib.error.URLError):
 			return
 		soup = BeautifulSoup(page, "html.parser")
 		check_stages = get_categories(soup, event_id)
@@ -99,13 +99,18 @@ def get_categories(soup, event_id):
 				db_category_check = db.session.query(Category.name).filter(
 				(Category.name==category_name) &
 				(Category.event_id==event_id))
+				#Check SAS category for duplicates as well 
+				db_sas_category_check = db.session.query(SASCategory).filter(
+				(SASCategory.category_reference==category_reference) &
+				(SASCategory.stage_reference==category_own_stage_reference))
 				if not (db.session.query(db_category_check.exists()).scalar()):
 					db.session.add(db_category)
 					db.session.flush()
-					db_sas_category = SASCategory(category_reference, category_own_stage_reference, db_category.id)
-					db.session.add(db_sas_category)
-					db.session.flush()
-					db.session.commit()			
+					if not (db.session.query(db_sas_category_check.exists()).scalar()):
+						db_sas_category = SASCategory(category_reference, category_own_stage_reference, db_category.id)
+						db.session.add(db_sas_category)
+						db.session.flush()
+						db.session.commit()			
 					if (div["data-multiple-event-stages"] == "1"):
 						#Event has stages with their own categories
 						get_category_stages(soup, db_category.id, category_reference)

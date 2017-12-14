@@ -9,13 +9,24 @@ import urllib
 import json 
 import time
 
+STAGE = "stage"
+CATEGORY = "category"
+
 def scrape_rt():
 	get_events_categories_stages()
-	for stage in db.session.query(RTEventStage):
-		get_results(int(float(stage.stage_reference)), "stage")
+	for event_stage in db.session.query(RTEventStage):
+		base_event_stage = db.session.query(EventStage).filter(EventStage.id==event_stage.event_stage_id).first()
+		if (base_event_stage.results):
+			pprint("Stage already has results")
+		else:
+			get_results(int(float(event_stage.stage_reference)), STAGE)
 	for category in db.session.query(RTCategory):
-		get_results(int(float(category.category_reference)), "category")
-	#get_results(9275, "category")	
+		base_category = db.session.query(Category).filter(Category.id==category.category_id).first()
+		if (base_category.results): 
+			pprint("Category already has results")
+		else:
+			get_results(int(float(category.category_reference)), CATEGORY)
+
 
 def get_events_categories_stages(): 
 	for year in YEARS: 
@@ -131,7 +142,7 @@ def get_results(route_id, type):
 		gender_position = gender_position_string.split('/')[0]
 		time_string = result['RaceTime']
 		seconds = duration_to_sec(time_string)
-		if (type == "category"):
+		if (type == CATEGORY):
 			rt_category = db.session.query(RTCategory).filter(RTCategory.category_reference==route_id).first()
 			category_id = rt_category.category_id
 			db_result_check = db.session.query(Result).filter(
@@ -144,7 +155,7 @@ def get_results(route_id, type):
 				gender_position, seconds, None, None, category_id)
 				db.session.add(db_category_result)
 				db.session.commit()
-		if (type == "stage"):
+		if (type == STAGE):
 			rt_event_stage = db.session.query(RTEventStage).filter(RTEventStage.stage_reference==route_id).first()
 			stage_id = rt_event_stage.event_stage_id
 			db_result_check = db.session.query(Result).filter(
@@ -160,7 +171,6 @@ def get_results(route_id, type):
 
 def get_participant(result): 
 	name = (result['NameAndTeam']).split(',')
-	pprint(name)
 	if (len(name) > 1):
 		last_name = name[0]
 		first_name = name[1]
@@ -182,6 +192,3 @@ def get_participant(result):
 	else: 
 		return db_participant_check.id
 
-
-	#get_events_categories_stages()
-	#get_results(9275)

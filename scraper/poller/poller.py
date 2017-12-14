@@ -5,4 +5,4 @@ class Poller(object):
 
 	def poll(self):
 		rt_scraper.scrape_rt()
-		#sas_scraper.scrape_sas()
+		sas_scraper.scrape_sas()
