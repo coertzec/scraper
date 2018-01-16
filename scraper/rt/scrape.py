@@ -25,7 +25,10 @@ def scrape_rt():
 		if (base_category.results): 
 			pprint("Category already has results")
 		else:
-			get_results(int(float(category.category_reference)), CATEGORY)
+			if (base_category.category_stages):
+				pprint("Category has stages, not adding results")
+			else:
+				get_results(int(float(category.category_reference)), CATEGORY)
 
 
 def get_events_categories_stages(): 
@@ -108,6 +111,7 @@ def duration_to_sec(duration):
 def get_results(route_id, type):
 	print("get_results")
 	url = "%s/results_by_event.aspx?RID=%d" % (DESTINATION_URL, route_id)
+	json_results = ''
 	try: 
 		page = urllib.request.urlopen(url)
 		content =  page.read().decode("utf-8")
@@ -135,39 +139,42 @@ def get_results(route_id, type):
 					bracket_index = json_string.rfind("{", 0, len(json_string))
 					json_results = json.loads(json_string[:bracket_index][:-1] + "]")
 				except json.decoder.JSONDecodeError:
+					print("Unparsable JSON!!!")
+					print(url)
 					print(json_string)
-	for result in json_results: 
-		participant_id = get_participant(result)
-		gender_position_string = result['GenderPos']
-		gender_position = gender_position_string.split('/')[0]
-		time_string = result['RaceTime']
-		seconds = duration_to_sec(time_string)
-		if (type == CATEGORY):
-			rt_category = db.session.query(RTCategory).filter(RTCategory.category_reference==route_id).first()
-			category_id = rt_category.category_id
-			db_result_check = db.session.query(Result).filter(
-				(Result.position==result['Position']) &
-				(Result.gender_position==gender_position) & 
-				(Result.time==seconds) & 
-				(Result.category_id==category_id)).first()
-			if not db_result_check:
-				db_category_result = Result(result['Position'], participant_id,
-				gender_position, seconds, None, None, category_id)
-				db.session.add(db_category_result)
-				db.session.commit()
-		if (type == STAGE):
-			rt_event_stage = db.session.query(RTEventStage).filter(RTEventStage.stage_reference==route_id).first()
-			stage_id = rt_event_stage.event_stage_id
-			db_result_check = db.session.query(Result).filter(
-				(Result.position==result['Position']) &
-				(Result.gender_position==gender_position) & 
-				(Result.time==seconds) & 
-				(Result.event_stage_id==stage_id)).first()
-			if not db_result_check:
-				db_result = Result(result['Position'], participant_id, gender_position,
-				seconds, stage_id, None, None)
-				db.session.add(db_result)
-				db.session.commit()
+	if (json_results):
+		for result in json_results: 
+			participant_id = get_participant(result)
+			gender_position_string = result['GenderPos']
+			gender_position = gender_position_string.split('/')[0]
+			time_string = result['RaceTime']
+			seconds = duration_to_sec(time_string)
+			if (type == CATEGORY):
+				rt_category = db.session.query(RTCategory).filter(RTCategory.category_reference==route_id).first()
+				category_id = rt_category.category_id
+				db_result_check = db.session.query(Result).filter(
+					(Result.position==result['Position']) &
+					(Result.gender_position==gender_position) & 
+					(Result.time==seconds) & 
+					(Result.category_id==category_id)).first()
+				if not db_result_check:
+					db_category_result = Result(result['Position'], participant_id,
+					gender_position, seconds, None, None, category_id)
+					db.session.add(db_category_result)
+					db.session.commit()
+			if (type == STAGE):
+				rt_event_stage = db.session.query(RTEventStage).filter(RTEventStage.stage_reference==route_id).first()
+				stage_id = rt_event_stage.event_stage_id
+				db_result_check = db.session.query(Result).filter(
+					(Result.position==result['Position']) &
+					(Result.gender_position==gender_position) & 
+					(Result.time==seconds) & 
+					(Result.event_stage_id==stage_id)).first()
+				if not db_result_check:
+					db_result = Result(result['Position'], participant_id, gender_position,
+					seconds, stage_id, None, None)
+					db.session.add(db_result)
+					db.session.commit()
 
 def get_participant(result): 
 	name = (result['NameAndTeam']).split(',')

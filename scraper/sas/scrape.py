@@ -37,7 +37,10 @@ def scrape_sas():
 		if (base_category.results):
 			pprint("Category has results")
 		else: 
-			write_category_results(category.stage_reference, category.id)
+			if (not base_category.category_stages):
+				write_category_results(category.stage_reference, category.id)
+			else:
+				pprint("No results but has category stages")
 	pprint("Scrape Complete")
 
 def get_mtb_events(): 
@@ -207,16 +210,16 @@ def write_stage_results(stage_reference, stage_id, stage_type):
 			db_result_check = db.session.query(Result).filter(
 				(Result.position==result['overall_pos']) &
 				(Result.gender_position==result['gender_pos']) & 
-				(Result.time==result['timeTakenSecondsString']) & 
+				(Result.time==result['time_taken_seconds']) & 
 				(Result.event_stage_id==event_stage_id) &
 				(Result.category_stage_id==category_stage_id))
 			if not (db.session.query(db_result_check.exists()).scalar()):
 				if (stage_type=="category"): 
 					db_result = Result(result['overall_pos'], participant_id, result['gender_pos'],
-					result['timeTakenSecondsString'], None, category_stage_id, None)
+					result['time_taken_seconds'], None, category_stage_id, None)
 				elif (stage_type=="event"):
 					db_result = Result(result['overall_pos'], participant_id, result['gender_pos'],
-				    result['timeTakenSecondsString'], event_stage_id, None, None)
+				    result['time_taken_seconds'], event_stage_id, None, None)
 				db.session.add(db_result)
 				db.session.commit()
 
@@ -228,11 +231,11 @@ def write_category_results(category_reference, category_id):
 		db_result_check = db.session.query(Result).filter(
 			(Result.position==result['overall_pos']) &
 			(Result.gender_position==result['gender_pos']) & 
-			(Result.time==result['timeTakenSecondsString']) & 
+			(Result.time==result['time_taken_seconds']) & 
 			(Result.category_id==category_id)).first()
 		if not db_result_check:
 			db_category_result = Result(result['overall_pos'], participant_id,
-			result['gender_pos'], result['timeTakenSecondsString'], None, None, category_id)
+			result['gender_pos'], result['time_taken_seconds'], None, None, category_id)
 			db.session.add(db_category_result)
 			db.session.commit()
 
